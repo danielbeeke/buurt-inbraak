@@ -11,9 +11,8 @@ gulp.task('browsersync', () => {
 
   gulp.watch([global.paths.html, global.paths.js]).on('change', reload);
   gulp.watch(global.paths.scss, gulp.series('css'));
-  gulp.watch([global.paths.js], gulp.series('compile'));
 });
 
-gulp.task('serve', gulp.series('compile', 'css', 'browsersync'));
+gulp.task('serve', gulp.series('css', 'browsersync'));
 
 

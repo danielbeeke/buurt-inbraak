@@ -1,0 +1,11 @@
+@import 'mapbox';
+@import 'leaflet';
+
+#map {
+  height: 100vh;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+}
