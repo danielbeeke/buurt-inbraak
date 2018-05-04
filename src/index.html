@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Buurt inbraak</title>
+    <link rel="stylesheet" type="text/css" href="css/critical.css">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+</head>
+
+<body>
+
+<noscript id="deferred-styles">
+    <link rel="stylesheet" type="text/css" href="css/styles.css" async defer>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Bigshot+One|Marck+Script|Lato:300" async defer>
+</noscript>
+<script>
+  var loadDeferredStyles = function() {
+    var addStylesNode = document.getElementById("deferred-styles");
+    var replacement = document.createElement("div");
+    replacement.innerHTML = addStylesNode.textContent;
+    document.body.appendChild(replacement)
+    addStylesNode.parentElement.removeChild(addStylesNode);
+  };
+  var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+  if (raf) raf(function() { window.setTimeout(loadDeferredStyles, 0); });
+  else window.addEventListener('load', loadDeferredStyles);
+</script>
+
+<script async defer type="module" src="javascript/app.js"></script>
+<script async defer nomodule src="javascript/build.js"></script>
+
+<script async defer src="https://cdn.polyfill.io/v2/polyfill.min.js"></script>
+</body>
+
+</html>
