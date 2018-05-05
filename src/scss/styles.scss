@@ -1,8 +1,14 @@
 @import 'mapbox';
 @import 'leaflet';
+@import 'markercluster';
+@import 'pie';
 
 #map {
   height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html, body {
