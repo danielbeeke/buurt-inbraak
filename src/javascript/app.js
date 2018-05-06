@@ -14,9 +14,11 @@ class BuurtInbraak {
    */
   constructor (mapId) {
     this.moment = new Moment();
+    this.abortController = new AbortController();
     this.dbTimeFormat = 'YYYY-MM-DD hh:mm:ss';
     this.map = L.map(mapId, {
       attributionControl: false,
+      zoomControl: false,
       maxZoom: 18
     }).setView([52.1, 5], 9);
 
@@ -31,7 +33,28 @@ class BuurtInbraak {
       iconCreateFunction: cluster => this.iconCreate(cluster)
     });
 
+    this.markerCluster.on('animationend', () => {
+      this.resizeMarkers();
+    });
+
     this.map.addLayer(this.markerCluster);
+    this.map.on('moveend', () => {
+      this.fetchMarkers();
+    });
+
+    this.map.on('zoomend', () => {
+      this.fetchMarkers();
+    });
+
+    document.querySelector("#start-date").valueAsDate = this.moment().subtract(6, 'month').toDate();
+    document.querySelector("#end-date").valueAsDate = new Date();
+
+    Array.from(document.querySelectorAll('input')).forEach((input) => {
+      input.addEventListener('change', () => {
+        this.fetchMarkers();
+      });
+    });
+
     this.fetchMarkers();
   }
 
@@ -40,8 +63,21 @@ class BuurtInbraak {
    */
   fetchMarkers () {
     let viewport = this.map.getBounds().toBBoxString();
-    let query = this.createQuery(viewport, '2017-01-01', '2019-01-01');
+
+    let startDate = document.querySelector("#start-date").value;
+    let endDate = document.querySelector("#end-date").value;
+
+    startDate = this.moment(startDate, 'YYYY-DD-MM').format(this.dbTimeFormat);
+    endDate = this.moment(endDate, 'YYYY-DD-MM').format(this.dbTimeFormat);
+
+    let categories = [];
+    if (document.querySelector("#woninginbraak:checked")) categories.push(document.querySelector("#woninginbraak:checked").value);
+    if (document.querySelector("#poging-tot-woninginbraak:checked")) categories.push(document.querySelector("#poging-tot-woninginbraak:checked").value);
+
+    let query = this.createQuery(viewport, startDate, endDate, categories);
     let queryUrl = `https://danielbeeke.carto.com/api/v2/sql?q=${query}&format=GeoJSON`;
+    this.markerCluster.clearLayers();
+    this.abortController.abort();
 
     fetch(queryUrl)
     .then(response => response.json())
@@ -67,18 +103,19 @@ class BuurtInbraak {
     let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.classList.add('pie');
 
-    let total = count1 + count2;
-    svg.dataset.numberCount = total.toString().length;
-    if (this.max < total) this.max = total;
-    if (this.min > total) this.min = total;
+    cluster.total = count1 + count2;
+    if (this.max < cluster.total) this.max = cluster.total;
+    if (this.min > cluster.total) this.min = cluster.total;
 
     this.createPie(svg, [
-      { percent: 1 / total * count1, className: 'inbraak' },
-      { percent: 1 / total * count2, className: 'poging-tot-inbraak' },
+      { percent: 1 / cluster.total * count1, className: 'woninginbraak' },
+      { percent: 1 / cluster.total * count2, className: 'poging-tot-woninginbraak' },
     ]);
 
     return new L.DivIcon({
-      html: svg.outerHTML,
+      html: svg.outerHTML + `<span class="total number"><span class="number-inner">${cluster.total}</span></span>`,
+      iconSize: [4, 4],
+      iconAnchor: [2, 2],
     });
   }
 
@@ -122,11 +159,28 @@ class BuurtInbraak {
   createMarkers (response) {
     this.min = 100000;
     this.max = 0;
-    this.markerCluster.clearLayers();
     response.features.forEach((row) => {
       let marker = new L.Marker([row.geometry.coordinates[1], row.geometry.coordinates[0]]);
       marker.data = row;
       this.markerCluster.addLayer(marker);
+    });
+
+    this.resizeMarkers();
+  }
+
+  /**
+   * At the end of animation resize the markers.
+   */
+  resizeMarkers () {
+    this.markerCluster._featureGroup.getLayers().forEach((cluster) => {
+      let count = cluster.total - this.min;
+      let percentage = 100 / this.max * count;
+      let size = Math.round(35 + (percentage * 0.5)) + 'px';
+      cluster._icon.style.width = size;
+      cluster._icon.style.height = size;
+      if (cluster.total) {
+        cluster._icon.dataset.numberCount = cluster.total.toString().length;
+      }
     });
   }
 
@@ -139,9 +193,6 @@ class BuurtInbraak {
    * @returns {string} A postGis query.
    */
   createQuery (viewport, dateStart, dateEnd, categories = [1, 2]) {
-    dateStart = this.moment(dateStart).format(this.dbTimeFormat);
-    dateEnd = this.moment(dateEnd).format(this.dbTimeFormat);
-
     return `
       SELECT DISTINCT ON (postal_code, date) postal_code, 
       sum(case when categoryId != '' then 1 else 0 end) as count, 

@@ -1,0 +1,45 @@
+.leaflet-marker-icon {
+  box-shadow: 0 4px 5px 0 black;
+  border-radius: 50%;
+
+  .number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 201;
+    color: white;
+    background-color: black;
+    display: block;
+    border-radius: 50%;
+    text-align: center;
+    padding: 4px;
+
+    &:before {
+      content: '';
+      float: left;
+      padding-top: 100%;
+    }
+  }
+
+  .number-inner {
+    display: block;
+    top: 50%;
+    font-size: 12px;
+    padding-top: 50%;
+    line-height: 0;
+    position: relative;
+  }
+
+  &[data-number-count="1"] {
+    .number-inner {
+      font-size: 10px;
+    }
+  }
+
+  &[data-number-count="2"] {
+    .number-inner {
+      font-size: 11px;
+    }
+  }
+}

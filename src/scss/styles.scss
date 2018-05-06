@@ -1,17 +1,14 @@
-@import 'mapbox';
+$woninginbraak: #ac0000;
+$poging-tot-woninginbraak: #ffad00;
+
+@import 'reset';
 @import 'leaflet';
 @import 'markercluster';
 @import 'pie';
+@import 'marker';
+@import 'filters';
 
 #map {
-  height: 100vh;
+  flex: 1 1 auto;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html, body {
-  padding: 0;
-  margin: 0;
-}

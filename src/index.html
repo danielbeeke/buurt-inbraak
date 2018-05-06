@@ -13,6 +13,27 @@
 
 <div id="map"></div>
 
+<div class="filters">
+    <div class="filters-inner">
+        <div class="checkbox-fields">
+            <label>Toon:</label>
+
+            <input class="checkbox-filters" id="woninginbraak" value="1" type="checkbox" checked>
+            <label for="woninginbraak" class="checkbox-label woninginbraak">Inbraak</label>
+
+            <input class="checkbox-filters" id="poging-tot-woninginbraak" value="2" type="checkbox" checked>
+            <label for="poging-tot-woninginbraak" class="checkbox-label poging-tot-woninginbraak">Poging</label>
+        </div>
+
+        <div class="date-fields">
+            <label>Start en eind:</label>
+            <input id="start-date" type="date">
+            <input id="end-date" type="date">
+        </div>
+
+    </div>
+</div>
+
 <noscript id="deferred-styles">
     <link rel="stylesheet" type="text/css" href="css/styles.css" async defer>
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Bigshot+One|Marck+Script|Lato:300" async defer>
