@@ -57787,6 +57787,163 @@ var leafletMarkercluster = function (L) {
 	exports.MarkerCluster = MarkerCluster;
 };
 
+var leafletHash = function (L) {
+  var HAS_HASHCHANGE = function () {
+    var doc_mode = window.documentMode;
+    return 'onhashchange' in window && (doc_mode === undefined || doc_mode > 7);
+  }();
+
+  L.Hash = function (map) {
+    this.onHashChange = L.Util.bind(this.onHashChange, this);
+
+    if (map) {
+      this.init(map);
+    }
+  };
+
+  L.Hash.parseHash = function (hash) {
+    if (hash.indexOf('#') === 0) {
+      hash = hash.substr(1);
+    }
+    var args = hash.split("/");
+    if (args.length == 3) {
+      var zoom = parseInt(args[0], 10),
+          lat = parseFloat(args[1]),
+          lon = parseFloat(args[2]);
+      if (isNaN(zoom) || isNaN(lat) || isNaN(lon)) {
+        return false;
+      } else {
+        return {
+          center: new L.LatLng(lat, lon),
+          zoom: zoom
+        };
+      }
+    } else {
+      return false;
+    }
+  };
+
+  L.Hash.formatHash = function (map) {
+    var center = map.getCenter(),
+        zoom = map.getZoom(),
+        precision = Math.max(0, Math.ceil(Math.log(zoom) / Math.LN2));
+
+    return "#" + [zoom, center.lat.toFixed(precision), center.lng.toFixed(precision)].join("/");
+  }, L.Hash.prototype = {
+    map: null,
+    lastHash: null,
+
+    parseHash: L.Hash.parseHash,
+    formatHash: L.Hash.formatHash,
+
+    init: function init(map) {
+      this.map = map;
+
+      // reset the hash
+      this.lastHash = null;
+      this.onHashChange();
+
+      if (!this.isListening) {
+        this.startListening();
+      }
+    },
+
+    removeFrom: function removeFrom(map) {
+      if (this.changeTimeout) {
+        clearTimeout(this.changeTimeout);
+      }
+
+      if (this.isListening) {
+        this.stopListening();
+      }
+
+      this.map = null;
+    },
+
+    onMapMove: function onMapMove() {
+      // bail if we're moving the map (updating from a hash),
+      // or if the map is not yet loaded
+
+      if (this.movingMap || !this.map._loaded) {
+        return false;
+      }
+
+      var hash = this.formatHash(this.map);
+      if (this.lastHash != hash) {
+        location.replace(hash);
+        this.lastHash = hash;
+      }
+    },
+
+    movingMap: false,
+    update: function update() {
+      var hash = location.hash;
+      if (hash === this.lastHash) {
+        return;
+      }
+      var parsed = this.parseHash(hash);
+      if (parsed) {
+        this.movingMap = true;
+
+        this.map.setView(parsed.center, parsed.zoom);
+
+        this.movingMap = false;
+      } else {
+        this.onMapMove(this.map);
+      }
+    },
+
+    // defer hash change updates every 100ms
+    changeDefer: 100,
+    changeTimeout: null,
+    onHashChange: function onHashChange() {
+      // throttle calls to update() so that they only happen every
+      // `changeDefer` ms
+      if (!this.changeTimeout) {
+        var that = this;
+        this.changeTimeout = setTimeout(function () {
+          that.update();
+          that.changeTimeout = null;
+        }, this.changeDefer);
+      }
+    },
+
+    isListening: false,
+    hashChangeInterval: null,
+    startListening: function startListening() {
+      this.map.on("moveend", this.onMapMove, this);
+
+      if (HAS_HASHCHANGE) {
+        L.DomEvent.addListener(window, "hashchange", this.onHashChange);
+      } else {
+        clearInterval(this.hashChangeInterval);
+        this.hashChangeInterval = setInterval(this.onHashChange, 50);
+      }
+      this.isListening = true;
+    },
+
+    stopListening: function stopListening() {
+      this.map.off("moveend", this.onMapMove, this);
+
+      if (HAS_HASHCHANGE) {
+        L.DomEvent.removeListener(window, "hashchange", this.onHashChange);
+      } else {
+        clearInterval(this.hashChangeInterval);
+      }
+      this.isListening = false;
+    }
+  };
+  L.hash = function (map) {
+    return new L.Hash(map);
+  };
+  L.Map.prototype.addHash = function () {
+    this._hash = L.hash(this);
+  };
+  L.Map.prototype.removeHash = function () {
+    this._hash.removeFrom();
+  };
+};
+
 //! moment.js
 
 var Moment = function () {
@@ -62188,6 +62345,7 @@ var Moment = function () {
 
 leafletMapboxgl(L$1, mapboxgl);
 leafletMarkercluster(L$1);
+leafletHash(L$1);
 
 var BuurtInbraak = function () {
   /**
@@ -62199,6 +62357,7 @@ var BuurtInbraak = function () {
 
     _classCallCheck(this, BuurtInbraak);
 
+    this.timeout = false;
     this.moment = new Moment();
     this.abortController = new AbortController();
     this.dbTimeFormat = 'YYYY-MM-DD hh:mm:ss';
@@ -62213,8 +62372,11 @@ var BuurtInbraak = function () {
       accessToken: 'no-token'
     }).addTo(this.map);
 
+    new L$1.Hash(this.map);
+
     this.markerCluster = new L$1.markerClusterGroup({
       singleMarkerMode: true,
+      animate: false,
       showCoverageOnHover: false,
       iconCreateFunction: function iconCreateFunction(cluster) {
         return _this.iconCreate(cluster);
@@ -62228,6 +62390,10 @@ var BuurtInbraak = function () {
     this.map.addLayer(this.markerCluster);
     this.map.on('moveend', function () {
       _this.fetchMarkers();
+    });
+
+    this.map.on('movestart', function () {
+      _this.clearData();
     });
 
     this.map.on('zoomend', function () {
@@ -62246,37 +62412,51 @@ var BuurtInbraak = function () {
     this.fetchMarkers();
   }
 
-  /**
-   * Gets the current state, converts those to filters and downloads the markers.
-   */
-
   _createClass(BuurtInbraak, [{
+    key: 'clearData',
+    value: function clearData() {
+      if (this.timeout) {
+        this.abortController.abort();
+        this.markerCluster.clearLayers();
+        clearTimeout(this.timeout);
+        document.body.classList.add('is-loading-data');
+      }
+    }
+
+    /**
+     * Gets the current state, converts those to filters and downloads the markers.
+     */
+
+  }, {
     key: 'fetchMarkers',
     value: function fetchMarkers() {
       var _this2 = this;
 
-      var viewport = this.map.getBounds().toBBoxString();
+      this.clearData();
 
-      var startDate = document.querySelector("#start-date").value;
-      var endDate = document.querySelector("#end-date").value;
+      this.timeout = setTimeout(function () {
+        var viewport = _this2.map.getBounds().toBBoxString();
 
-      startDate = this.moment(startDate, 'YYYY-DD-MM').format(this.dbTimeFormat);
-      endDate = this.moment(endDate, 'YYYY-DD-MM').format(this.dbTimeFormat);
+        var startDate = document.querySelector("#start-date").value;
+        var endDate = document.querySelector("#end-date").value;
 
-      var categories = [];
-      if (document.querySelector("#woninginbraak:checked")) categories.push(document.querySelector("#woninginbraak:checked").value);
-      if (document.querySelector("#poging-tot-woninginbraak:checked")) categories.push(document.querySelector("#poging-tot-woninginbraak:checked").value);
+        startDate = _this2.moment(startDate, 'YYYY-DD-MM').format(_this2.dbTimeFormat);
+        endDate = _this2.moment(endDate, 'YYYY-DD-MM').format(_this2.dbTimeFormat);
 
-      var query = this.createQuery(viewport, startDate, endDate, categories);
-      var queryUrl = 'https://danielbeeke.carto.com/api/v2/sql?q=' + query + '&format=GeoJSON';
-      this.markerCluster.clearLayers();
-      this.abortController.abort();
+        var categories = [];
+        if (document.querySelector("#woninginbraak:checked")) categories.push(document.querySelector("#woninginbraak:checked").value);
+        if (document.querySelector("#poging-tot-woninginbraak:checked")) categories.push(document.querySelector("#poging-tot-woninginbraak:checked").value);
 
-      fetch(queryUrl).then(function (response) {
-        return response.json();
-      }).then(function (response) {
-        _this2.createMarkers(response);
-      });
+        var query = _this2.createQuery(viewport, startDate, endDate, categories);
+        var queryUrl = 'https://danielbeeke.carto.com/api/v2/sql?q=' + query + '&format=GeoJSON';
+
+        fetch(queryUrl).then(function (response) {
+          return response.json();
+        }).then(function (response) {
+          document.body.classList.remove('is-loading-data');
+          _this2.createMarkers(response);
+        });
+      }, 400);
     }
 
     /**
@@ -62384,8 +62564,10 @@ var BuurtInbraak = function () {
       var _this4 = this;
 
       this.markerCluster._featureGroup.getLayers().forEach(function (cluster) {
+        if (!cluster.total) cluster.total = cluster.data.properties.count;
         var count = cluster.total - _this4.min;
         var percentage = 100 / _this4.max * count;
+
         var size = Math.round(35 + percentage * 0.5) + 'px';
         cluster._icon.style.width = size;
         cluster._icon.style.height = size;
@@ -62409,7 +62591,28 @@ var BuurtInbraak = function () {
     value: function createQuery(viewport, dateStart, dateEnd) {
       var categories = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [1, 2];
 
-      return '\n      SELECT DISTINCT ON (postal_code, date) postal_code, \n      sum(case when categoryId != \'\' then 1 else 0 end) as count, \n      sum(case when categoryId = \'1\' then 1 else 0 end) as ct1, \n      sum(case when categoryId = \'2\' then 1 else 0 end) as ct2, \n      min(date) as date, \n      the_geom FROM misdaad WHERE ST_Contains(ST_MakeEnvelope(' + viewport + ', 4326), the_geom) \n      AND date >= (\'' + dateStart + '\') AND date <= (\'' + dateEnd + '\') \n      AND categoryId IN (\'' + categories.join("','") + '\') \n      GROUP BY the_geom, postal_code ORDER BY date';
+      var zoom = this.map.getZoom();
+      var precision = 2;
+
+      var precisionMap = {
+        7: 3,
+        8: 4,
+        9: 4,
+        10: 5,
+        11: 5,
+        12: 6,
+        13: 7,
+        14: 7,
+        15: 13
+      };
+
+      if (precisionMap[zoom]) {
+        precision = precisionMap[zoom];
+      }
+
+      if (zoom > 15) precision = 8;
+
+      return '\n      SELECT \n      st_makepoint(avg(st_x(the_geom)), avg(st_y(the_geom))) as the_geom,\n      sum(case when categoryId != \'\' then 1 else 0 end) as count, \n      sum(case when categoryId = \'1\' then 1 else 0 end) as ct1, \n      sum(case when categoryId = \'2\' then 1 else 0 end) as ct2, \n      min(date) as date FROM misdaad WHERE ST_Contains(ST_MakeEnvelope(' + viewport + ', 4326), the_geom) \n      AND date >= (\'' + dateStart + '\') AND date <= (\'' + dateEnd + '\') \n      AND categoryId IN (\'' + categories.join("','") + '\') \n      GROUP BY substring(ST_GeoHash(the_geom), 1, ' + precision + ') ORDER BY date';
     }
   }]);
 

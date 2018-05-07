@@ -256,7 +256,7 @@ body {
 
 /* visual tweaks */
 .leaflet-container {
-  background: #ddd;
+  background: black;
   outline: 0; }
 
 .leaflet-container a {
@@ -605,6 +605,17 @@ body {
   left: 0;
   margin-left: -12px;
   border-right-color: #fff; }
+
+body {
+  background-color: black; }
+
+#map {
+  -webkit-transition: .7s opacity;
+  -o-transition: .7s opacity;
+  transition: .7s opacity; }
+
+.is-loading-data #map {
+  opacity: .6; }
 
 .leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
   -webkit-transition: -webkit-transform 0.3s ease-out, opacity 0.3s ease-in;
