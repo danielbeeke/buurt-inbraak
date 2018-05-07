@@ -75,6 +75,7 @@ class BuurtInbraak {
     if (document.querySelector("#poging-tot-woninginbraak:checked")) categories.push(document.querySelector("#poging-tot-woninginbraak:checked").value);
 
     let query = this.createQuery(viewport, startDate, endDate, categories);
+    console.log(query)
     let queryUrl = `https://danielbeeke.carto.com/api/v2/sql?q=${query}&format=GeoJSON`;
     this.markerCluster.clearLayers();
     this.abortController.abort();
@@ -193,16 +194,19 @@ class BuurtInbraak {
    * @returns {string} A postGis query.
    */
   createQuery (viewport, dateStart, dateEnd, categories = [1, 2]) {
+
+    // `SELECT Count(*), st_makepoint(avg(st_x(the_geom)), avg(st_y(the_geom))) as geom FROM misdaad GROUP BY substring(ST_GeoHash(the_geom),1,10)`;
+
     return `
-      SELECT DISTINCT ON (postal_code, date) postal_code, 
+      SELECT 
+      st_makepoint(avg(st_x(the_geom)), avg(st_y(the_geom))) as the_geom,
       sum(case when categoryId != '' then 1 else 0 end) as count, 
       sum(case when categoryId = '1' then 1 else 0 end) as ct1, 
       sum(case when categoryId = '2' then 1 else 0 end) as ct2, 
-      min(date) as date, 
-      the_geom FROM misdaad WHERE ST_Contains(ST_MakeEnvelope(${viewport}, 4326), the_geom) 
+      min(date) as date FROM misdaad WHERE ST_Contains(ST_MakeEnvelope(${viewport}, 4326), the_geom) 
       AND date >= ('${dateStart}') AND date <= ('${dateEnd}') 
       AND categoryId IN ('${categories.join("','")}') 
-      GROUP BY the_geom, postal_code ORDER BY date`;
+      GROUP BY substring(ST_GeoHash(the_geom), 1, 3) ORDER BY date`;
   }
 }
 
