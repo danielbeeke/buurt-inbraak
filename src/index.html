@@ -9,30 +9,52 @@
     <script>exports = {}</script>
 </head>
 
-<body>
+<body class="is-loading-data">
+
+<!-- data-state="collapsed" is optional, it prevents a flash of content before initiating -->
+<div class="sprinkhaan-container" data-state="collapsed" id="sprinkhaan">
+    <div class="sprinkhaan-header is-sticky">Lorem ipsum dolor.</div>
+    <div class="sprinkhaan-close-button"></div>
+
+    <div class="sprinkhaan-inner">
+
+        <div class="sprinkhaan-content-wrapper">
+            <div class="sprinkhaan-header is-not-sticky">Filters</div>
+
+            <div class="sprinkhaan-content">
+                <div class="filters">
+                    <div class="filters-inner">
+                        <div class="checkbox-fields">
+                            <label>Toon:</label>
+
+                            <input class="checkbox-filters" id="woninginbraak" value="1" type="checkbox" checked>
+                            <label for="woninginbraak" class="checkbox-label woninginbraak">Inbraak</label>
+
+                            <input class="checkbox-filters" id="poging-tot-woninginbraak" value="2" type="checkbox" checked>
+                            <label for="poging-tot-woninginbraak" class="checkbox-label poging-tot-woninginbraak">Poging</label>
+                        </div>
+
+                        <div class="date-fields">
+                            <label>Start en eind:</label>
+                            <input id="start-date" type="date">
+                            <input id="end-date" type="date">
+                        </div>
+
+                    </div>
+
+                    <div id="graph-labels"></div>
+                    <div class="graph"></div>
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="map"></div>
 
-<div class="filters">
-    <div class="filters-inner">
-        <div class="checkbox-fields">
-            <label>Toon:</label>
-
-            <input class="checkbox-filters" id="woninginbraak" value="1" type="checkbox" checked>
-            <label for="woninginbraak" class="checkbox-label woninginbraak">Inbraak</label>
-
-            <input class="checkbox-filters" id="poging-tot-woninginbraak" value="2" type="checkbox" checked>
-            <label for="poging-tot-woninginbraak" class="checkbox-label poging-tot-woninginbraak">Poging</label>
-        </div>
-
-        <div class="date-fields">
-            <label>Start en eind:</label>
-            <input id="start-date" type="date">
-            <input id="end-date" type="date">
-        </div>
-
-    </div>
-</div>
 
 <noscript id="deferred-styles">
     <link rel="stylesheet" type="text/css" href="css/styles.css" async defer>
@@ -52,6 +74,7 @@
   else window.addEventListener('load', loadDeferredStyles);
 </script>
 
+<script src="https://rawgit.com/web-animations/web-animations-js/master/web-animations-next.dev.js"></script>
 <script async defer type="module" src="javascript/app.js"></script>
 <script async defer nomodule src="javascript/build.js"></script>
 

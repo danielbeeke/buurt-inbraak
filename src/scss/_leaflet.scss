@@ -217,7 +217,7 @@
 }
 /* visual tweaks */
 .leaflet-container {
-	background: #ddd;
+	background: black;
 	outline: 0;
 }
 .leaflet-container a {
@@ -549,4 +549,18 @@
 	left: 0;
 	margin-left: -12px;
 	border-right-color: #fff;
+}
+
+body {
+	background-color: black;
+}
+
+.leaflet-marker-pane {
+	transition: .7s opacity;
+}
+
+.is-loading-data {
+	.leaflet-marker-pane {
+		opacity: .6;
+	}
 }
