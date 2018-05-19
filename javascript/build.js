@@ -76250,6 +76250,8 @@ var BuurtInbraak = function () {
     this.moment = new Moment();
     this.abortController = new AbortController();
     this.dbTimeFormat = "YYYY-MM-DD hh:mm:ss";
+    this.graphElement = document.querySelector(".graph");
+
     this.map = L$1.map(mapId, {
       attributionControl: false,
       zoomControl: false,
@@ -76308,6 +76310,11 @@ var BuurtInbraak = function () {
     });
   }
 
+  /**
+   * Creates the graph.
+   * @param {*} data 
+   */
+
   _createClass(BuurtInbraak, [{
     key: "createGraph",
     value: function createGraph(data) {
@@ -76320,8 +76327,6 @@ var BuurtInbraak = function () {
       data.forEach(function (row) {
         transformedData.push([_this2.moment(row.date).toDate(), row.ct1, row.ct2]);
       });
-
-      this.graphElement = document.querySelector(".graph");
 
       var legendFormatter = function legendFormatter(data) {
         if (data.x == null) {
@@ -76364,6 +76369,11 @@ var BuurtInbraak = function () {
         colors: ["#ac0000", "#ffad00"]
       });
     }
+
+    /**
+     * Clears all the data of the map.
+     */
+
   }, {
     key: "clearData",
     value: function clearData() {
@@ -76371,6 +76381,10 @@ var BuurtInbraak = function () {
         this.abortController.abort();
         document.body.classList.add("is-loading-data");
         this.markerCluster.clearLayers();
+        if (this.graph) {
+          this.graph.destroy();
+          this.graph = false;
+        }
         clearTimeout(this.timeout);
       }
     }

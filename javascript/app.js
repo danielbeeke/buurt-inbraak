@@ -21,6 +21,8 @@ class BuurtInbraak {
     this.moment = new Moment();
     this.abortController = new AbortController();
     this.dbTimeFormat = "YYYY-MM-DD hh:mm:ss";
+    this.graphElement = document.querySelector(".graph");
+
     this.map = L.map(mapId, {
       attributionControl: false,
       zoomControl: false,
@@ -78,6 +80,10 @@ class BuurtInbraak {
     });
   }
 
+  /**
+   * Creates the graph.
+   * @param {*} data 
+   */
   createGraph (data) {
     if (!data) return;
 
@@ -86,9 +92,6 @@ class BuurtInbraak {
     data.forEach((row) => {
       transformedData.push([this.moment(row.date).toDate(), row.ct1, row.ct2]);
     });
-
-    this.graphElement = document.querySelector(".graph");
-
 
     let legendFormatter = (data) => {
       if (data.x == null) {
@@ -107,7 +110,6 @@ class BuurtInbraak {
       });
       return html;
     };
-
 
     this.graph = new Dygraph(this.graphElement, transformedData,
       {
@@ -132,11 +134,18 @@ class BuurtInbraak {
       });
   }
 
+  /**
+   * Clears all the data of the map.
+   */
   clearData () {
     if (this.timeout) {
       this.abortController.abort();
       document.body.classList.add("is-loading-data");
       this.markerCluster.clearLayers();
+      if (this.graph) {
+        this.graph.destroy();
+        this.graph = false;
+      }
       clearTimeout(this.timeout);
     }
   }
