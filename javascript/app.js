@@ -1,9 +1,11 @@
-import L from './leaflet.es6.js';
-import mapboxgl from './mapbox-gl.es6.js';
-import leafletMapboxgl from './leaflet-mapbox-gl.es6.js';
-import leafletMarkercluster from './leaflet.markercluster.es6.js';
-import leafletHash from './leaflet-hash.es6.js';
-import Moment from './moment.es6.js';
+import L from "./leaflet.es6.js";
+import mapboxgl from "./mapbox-gl.es6.js";
+import leafletMapboxgl from "./leaflet-mapbox-gl.es6.js";
+import leafletMarkercluster from "./leaflet.markercluster.es6.js";
+import leafletHash from "./leaflet-hash.es6.js";
+import Moment from "./moment.es6.js";
+import Dygraph from "./dygraph.es6.js";
+import Sprinkhaan from "./sprinkhaan/js/Sprinkhaan.js";
 
 leafletMapboxgl(L, mapboxgl);
 leafletMarkercluster(L);
@@ -18,7 +20,7 @@ class BuurtInbraak {
     this.timeout = false;
     this.moment = new Moment();
     this.abortController = new AbortController();
-    this.dbTimeFormat = 'YYYY-MM-DD hh:mm:ss';
+    this.dbTimeFormat = "YYYY-MM-DD hh:mm:ss";
     this.map = L.map(mapId, {
       attributionControl: false,
       zoomControl: false,
@@ -26,8 +28,8 @@ class BuurtInbraak {
     }).setView([52.1, 5], 9);
 
     this.mapLayer = L.mapboxGL({
-      style: 'https://free.tilehosting.com/styles/darkmatter/style.json?key=XOnhCKrOit6tkshgs13C',
-      accessToken: 'no-token'
+      style: "https://free.tilehosting.com/styles/darkmatter/style.json?key=XOnhCKrOit6tkshgs13C",
+      accessToken: "no-token"
     }).addTo(this.map);
 
     new L.Hash(this.map);
@@ -39,41 +41,103 @@ class BuurtInbraak {
       iconCreateFunction: cluster => this.iconCreate(cluster)
     });
 
-    this.markerCluster.on('animationend', () => {
+    this.markerCluster.on("animationend", () => {
       this.resizeMarkers();
     });
 
     this.map.addLayer(this.markerCluster);
-    this.map.on('moveend', () => {
+    this.map.on("moveend", () => {
       this.fetchMarkers();
     });
 
-    this.map.on('movestart', () => {
+    this.map.on("movestart", () => {
       this.clearData();
     });
 
-    this.map.on('zoomend', () => {
+    this.map.on("zoomend", () => {
       this.fetchMarkers();
     });
 
-    document.querySelector("#start-date").valueAsDate = this.moment().subtract(6, 'month').toDate();
+    document.querySelector("#start-date").valueAsDate = this.moment().subtract(6, "month").toDate();
     document.querySelector("#end-date").valueAsDate = new Date();
 
-    Array.from(document.querySelectorAll('input')).forEach((input) => {
-      input.addEventListener('change', () => {
+    Array.from(document.querySelectorAll("input")).forEach((input) => {
+      input.addEventListener("change", () => {
         this.fetchMarkers();
       });
     });
 
     this.fetchMarkers();
+
+    this.sprinkhaan = new Sprinkhaan();
+    this.sprinkhaan.expand(() => {
+      if (window.innerWidth < 800) {
+        this.sprinkhaan.collapse();
+      }
+
+    });
+  }
+
+  createGraph (data) {
+    if (!data) return;
+
+    let transformedData = [];
+
+    data.forEach((row) => {
+      transformedData.push([this.moment(row.date).toDate(), row.ct1, row.ct2]);
+    });
+
+    this.graphElement = document.querySelector(".graph");
+
+
+    let legendFormatter = (data) => {
+      if (data.x == null) {
+        // This happens when there's no selection and {legend: 'always'} is set.
+        return "<br>" + data.series.map(function(series) { return series.dashHTML + " " + series.labelHTML; }).join("<br>");
+      }
+
+      let html = "Datum : " + this.moment(data.x).format("DD-MM-YYYY");
+      data.series.forEach(function(series) {
+        if (!series.isVisible) return;
+        let labeledData = series.labelHTML + ": " + series.yHTML;
+        if (series.isHighlighted) {
+          labeledData = "<b>" + labeledData + "</b>";
+        }
+        html += "<br>" + series.dashHTML + " " + labeledData;
+      });
+      return html;
+    };
+
+
+    this.graph = new Dygraph(this.graphElement, transformedData,
+      {
+        gridLineColor: "black",
+        zoomCallback: () => {
+          let range = this.graph.xAxisRange();
+
+          let fromDate = this.moment(range[0]).toDate();
+          let tillDate = this.moment(range[1]).toDate();
+
+          document.querySelector("#start-date").valueAsDate = fromDate;
+          document.querySelector("#end-date").valueAsDate = tillDate;
+
+          this.fetchMarkers();
+        },
+        highlightCircleSize: 5,
+        labelsDiv: "graph-labels",
+        hideOverlayOnMouseOut: false,
+        legendFormatter: legendFormatter,
+        labels: [ "", "Inbraak", "Poging tot inbraak"],
+        colors: ["#ac0000", "#ffad00"]
+      });
   }
 
   clearData () {
     if (this.timeout) {
       this.abortController.abort();
+      document.body.classList.add("is-loading-data");
       this.markerCluster.clearLayers();
       clearTimeout(this.timeout);
-      document.body.classList.add('is-loading-data');
     }
   }
 
@@ -86,24 +150,34 @@ class BuurtInbraak {
     this.timeout = setTimeout(() => {
       let viewport = this.map.getBounds().toBBoxString();
 
-      let startDate = document.querySelector("#start-date").value;
-      let endDate = document.querySelector("#end-date").value;
+      let startDate = document.querySelector("#start-date").valueAsDate;
+      let endDate = document.querySelector("#end-date").valueAsDate;
 
-      startDate = this.moment(startDate, 'YYYY-DD-MM').format(this.dbTimeFormat);
-      endDate = this.moment(endDate, 'YYYY-DD-MM').format(this.dbTimeFormat);
+      startDate = this.moment(startDate, "YYYY-DD-MM").format(this.dbTimeFormat);
+      endDate = this.moment(endDate, "YYYY-DD-MM").format(this.dbTimeFormat);
 
       let categories = [];
       if (document.querySelector("#woninginbraak:checked")) categories.push(document.querySelector("#woninginbraak:checked").value);
       if (document.querySelector("#poging-tot-woninginbraak:checked")) categories.push(document.querySelector("#poging-tot-woninginbraak:checked").value);
 
-      let query = this.createQuery(viewport, startDate, endDate, categories);
-      let queryUrl = `https://danielbeeke.carto.com/api/v2/sql?q=${query}&format=GeoJSON`;
+      let mapQuery = this.createMapQuery(viewport, startDate, endDate, categories);
+      let mapQueryUrl = `https://danielbeeke.carto.com/api/v2/sql?q=${mapQuery}&format=GeoJSON`;
 
-      fetch(queryUrl)
+      fetch(mapQueryUrl)
         .then(response => response.json())
         .then((response) => {
-          document.body.classList.remove('is-loading-data');
+          document.body.classList.remove("is-loading-data");
           this.createMarkers(response);
+        });
+
+      let graphQuery = this.createGraphQuery(viewport, startDate, endDate, categories);
+      let graphQueryUrl = `https://danielbeeke.carto.com/api/v2/sql?q=${graphQuery}&format=JSON`;
+
+      fetch(graphQueryUrl)
+        .then(response => response.json())
+        .then((dateRows) => {
+          document.body.classList.remove("is-loading-data");
+          this.createGraph(dateRows.rows);
         });
     }, 400);
   }
@@ -122,16 +196,16 @@ class BuurtInbraak {
       count2 = count2 + child.data.properties.ct2;
     });
 
-    let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.classList.add('pie');
+    let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("pie");
 
     cluster.total = count1 + count2;
     if (this.max < cluster.total) this.max = cluster.total;
     if (this.min > cluster.total) this.min = cluster.total;
 
     this.createPie(svg, [
-      { percent: 1 / cluster.total * count1, className: 'woninginbraak' },
-      { percent: 1 / cluster.total * count2, className: 'poging-tot-woninginbraak' },
+      { percent: 1 / cluster.total * count1, className: "woninginbraak" },
+      { percent: 1 / cluster.total * count2, className: "poging-tot-woninginbraak" },
     ]);
 
     return new L.DivIcon({
@@ -147,7 +221,7 @@ class BuurtInbraak {
    * @param slices
    */
   createPie (element, slices) {
-    element.setAttributeNS (null, 'viewBox', '-1 -1 2 2');
+    element.setAttributeNS (null, "viewBox", "-1 -1 2 2");
     let cumulativePercent = 0;
 
     let getCoordinatesForPercent = (percent) => {
@@ -164,12 +238,12 @@ class BuurtInbraak {
       const pathData = [
         `M ${startX} ${startY}`,
         `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
-        `L 0 0`,
-      ].join(' ');
+        "L 0 0",
+      ].join(" ");
 
-      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      pathEl.setAttribute('d', pathData);
-      pathEl.setAttribute('class', slice.className);
+      const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathEl.setAttribute("d", pathData);
+      pathEl.setAttribute("class", slice.className);
       element.appendChild(pathEl);
     });
   }
@@ -199,7 +273,7 @@ class BuurtInbraak {
       let count = cluster.total - this.min;
       let percentage = 100 / this.max * count;
 
-      let size = Math.round(35 + (percentage * 0.5)) + 'px';
+      let size = Math.round(35 + (percentage * 0.5)) + "px";
       cluster._icon.style.width = size;
       cluster._icon.style.height = size;
       if (cluster.total) {
@@ -216,7 +290,7 @@ class BuurtInbraak {
    * @param categories 1: woninginbraak, 2: poging-tot-woninginbraak
    * @returns {string} A postGis query.
    */
-  createQuery (viewport, dateStart, dateEnd, categories = [1, 2]) {
+  createMapQuery (viewport, dateStart, dateEnd, categories = [1, 2]) {
     let zoom = this.map.getZoom();
     let precision = 2;
 
@@ -249,6 +323,29 @@ class BuurtInbraak {
       AND categoryId IN ('${categories.join("','")}') 
       GROUP BY substring(ST_GeoHash(the_geom), 1, ${precision}) ORDER BY date`;
   }
+
+
+  /**
+   *
+   * @param viewport A leaflet bounding box.
+   * @param dateStart A moment js parseable date.
+   * @param dateEnd A moment js parseable date.
+   * @param categories 1: woninginbraak, 2: poging-tot-woninginbraak
+   * @returns {string} A postGis query.
+   */
+  createGraphQuery (viewport, dateStart, dateEnd, categories = [1, 2]) {
+    return `
+      SELECT 
+      date,
+      st_makepoint(avg(st_x(the_geom)), avg(st_y(the_geom))) as the_geom,
+      sum(case when categoryId != '' then 1 else 0 end) as count, 
+      sum(case when categoryId = '1' then 1 else 0 end) as ct1, 
+      sum(case when categoryId = '2' then 1 else 0 end) as ct2 
+      FROM misdaad WHERE ST_Contains(ST_MakeEnvelope(${viewport}, 4326), the_geom) 
+      AND date >= ('${dateStart}') AND date <= ('${dateEnd}') 
+      AND categoryId IN ('${categories.join("','")}') 
+      GROUP BY date ORDER BY date`;
+  }
 }
 
-new BuurtInbraak('map');
+new BuurtInbraak("map");

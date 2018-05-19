@@ -609,12 +609,12 @@ body {
 body {
   background-color: black; }
 
-#map {
+.leaflet-marker-pane {
   -webkit-transition: .7s opacity;
   -o-transition: .7s opacity;
   transition: .7s opacity; }
 
-.is-loading-data #map {
+.is-loading-data .leaflet-marker-pane {
   opacity: .6; }
 
 .leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
@@ -745,12 +745,8 @@ body {
   -webkit-flex: 0 1 auto;
   -ms-flex: 0 1 auto;
   flex: 0 1 auto;
-  background-color: black;
   color: white;
-  padding: 20px;
-  z-index: 2090;
-  -webkit-box-shadow: 0 0 20px 0 black;
-  box-shadow: 0 0 20px 0 black; }
+  z-index: 2090; }
   .filters .filters-inner {
     display: -webkit-box;
     display: -webkit-flex;
@@ -838,6 +834,285 @@ body {
     opacity: 1; }
   .filters input:checked + .woninginbraak:after {
     opacity: 1; }
+
+/**
+ * Default styles for the dygraphs charting library.
+ */
+.dygraph-legend {
+  position: absolute;
+  font-size: 14px;
+  z-index: 10;
+  width: 250px;
+  /* labelsDivWidth */
+  /*
+  dygraphs determines these based on the presence of chart labels.
+  It might make more sense to create a wrapper div around the chart proper.
+  top: 0px;
+  right: 2px;
+  */
+  background: white;
+  line-height: normal;
+  text-align: left;
+  overflow: hidden;
+  color: black; }
+
+/* styles for a solid line in the legend */
+.dygraph-legend-line {
+  display: inline-block;
+  position: relative;
+  bottom: .5ex;
+  padding-left: 1em;
+  height: 1px;
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+  /* border-bottom-color is set based on the series color */ }
+
+/* styles for a dashed line in the legend, e.g. when strokePattern is set */
+.dygraph-legend-dash {
+  display: inline-block;
+  position: relative;
+  bottom: .5ex;
+  height: 1px;
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+  /* border-bottom-color is set based on the series color */
+  /* margin-right is set based on the stroke pattern */
+  /* padding-left is set based on the stroke pattern */ }
+
+.dygraph-roller {
+  position: absolute;
+  z-index: 10; }
+
+/* This class is shared by all annotations, including those with icons */
+.dygraph-annotation {
+  position: absolute;
+  z-index: 10;
+  overflow: hidden; }
+
+/* This class only applies to annotations without icons */
+/* Old class name: .dygraphDefaultAnnotation */
+.dygraph-default-annotation {
+  border: 1px solid black;
+  background-color: white;
+  text-align: center; }
+
+.dygraph-axis-label {
+  /* position: absolute; */
+  /* font-size: 14px; */
+  z-index: 10;
+  line-height: normal;
+  overflow: hidden;
+  color: white;
+  /* replaces old axisLabelColor option */ }
+
+.dygraph-title {
+  font-weight: bold;
+  z-index: 10;
+  text-align: center;
+  /* font-size: based on titleHeight option */ }
+
+.dygraph-xlabel {
+  text-align: center;
+  /* font-size: based on xLabelHeight option */ }
+
+/* For y-axis label */
+.dygraph-label-rotate-left {
+  text-align: center;
+  /* See http://caniuse.com/#feat=transforms2d */
+  transform: rotate(90deg);
+  -webkit-transform: rotate(90deg);
+  -moz-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+  -ms-transform: rotate(90deg); }
+
+/* For y2-axis label */
+.dygraph-label-rotate-right {
+  text-align: center;
+  /* See http://caniuse.com/#feat=transforms2d */
+  transform: rotate(-90deg);
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  -o-transform: rotate(-90deg);
+  -ms-transform: rotate(-90deg); }
+
+.graph {
+  width: 100% !important;
+  height: 200px !important; }
+
+#graph-labels {
+  height: 100px;
+  display: block !important;
+  margin-top: 20px; }
+
+body {
+  overflow-y: hidden; }
+
+.sprinkhaan-container {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent; }
+  .sprinkhaan-container * {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent; }
+  .sprinkhaan-container .sprinkhaan-close-button {
+    position: absolute;
+    top: 5px;
+    right: 15px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    z-index: 2;
+    opacity: 0; }
+    .sprinkhaan-container .sprinkhaan-close-button:before, .sprinkhaan-container .sprinkhaan-close-button:after {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      content: '';
+      background-color: white;
+      width: 16px;
+      height: 2px;
+      -webkit-border-radius: 4px;
+      border-radius: 4px; }
+    .sprinkhaan-container .sprinkhaan-close-button:before {
+      -webkit-transform-origin: center center;
+      -ms-transform-origin: center center;
+      transform-origin: center center;
+      -webkit-transform: translate(-50%, -50%) rotate(-45deg);
+      -ms-transform: translate(-50%, -50%) rotate(-45deg);
+      transform: translate(-50%, -50%) rotate(-45deg); }
+    .sprinkhaan-container .sprinkhaan-close-button:after {
+      -webkit-transform-origin: center center;
+      -ms-transform-origin: center center;
+      transform-origin: center center;
+      -webkit-transform: translate(-50%, -50%) rotate(45deg);
+      -ms-transform: translate(-50%, -50%) rotate(45deg);
+      transform: translate(-50%, -50%) rotate(45deg); }
+  .sprinkhaan-container .sprinkhaan-inner {
+    position: relative;
+    overflow-y: hidden;
+    overflow-x: hidden;
+    height: 100%;
+    width: -webkit-calc(100% + 20px);
+    width: calc(100% + 20px);
+    pointer-events: none;
+    background-color: transparent; }
+    .sprinkhaan-container .sprinkhaan-inner::-webkit-scrollbar {
+      display: none; }
+  .sprinkhaan-container .sprinkhaan-media {
+    width: 100%;
+    background-color: black;
+    -webkit-transform: translateY(9999px);
+    -ms-transform: translateY(9999px);
+    transform: translateY(9999px);
+    left: 0;
+    position: relative;
+    pointer-events: auto;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer; }
+    .sprinkhaan-container .sprinkhaan-media object,
+    .sprinkhaan-container .sprinkhaan-media video,
+    .sprinkhaan-container .sprinkhaan-media a,
+    .sprinkhaan-container .sprinkhaan-media iframe,
+    .sprinkhaan-container .sprinkhaan-media img {
+      max-width: 100%;
+      pointer-events: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      display: block; }
+  .sprinkhaan-container .sprinkhaan-content-wrapper {
+    -webkit-transform: translateY(9999px);
+    -ms-transform: translateY(9999px);
+    transform: translateY(9999px);
+    pointer-events: auto;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%; }
+  .sprinkhaan-container .sprinkhaan-header {
+    width: 100%;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    padding: 15px;
+    background-color: black;
+    color: white;
+    -webkit-transition: padding .2s ease, -webkit-box-shadow .4s ease;
+    transition: padding .2s ease, -webkit-box-shadow .4s ease;
+    -o-transition: padding .2s ease, box-shadow .4s ease;
+    transition: padding .2s ease, box-shadow .4s ease;
+    transition: padding .2s ease, box-shadow .4s ease, -webkit-box-shadow .4s ease;
+    position: absolute; }
+    .sprinkhaan-container .sprinkhaan-header.is-sticky {
+      -webkit-box-shadow: 0 0 10px transparent;
+      box-shadow: 0 0 10px transparent;
+      z-index: -1;
+      opacity: 0; }
+  .sprinkhaan-container .sprinkhaan-content {
+    pointer-events: auto;
+    background: #292929;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    padding: 15px;
+    position: relative; }
+
+@media screen and (min-width: 680px) {
+  .sprinkhaan-container {
+    right: 0px;
+    left: auto;
+    max-width: 400px;
+    bottom: 0;
+    height: -webkit-calc(100% - 200px);
+    height: calc(100% - 200px); }
+    .sprinkhaan-container .sprinkhaan-header {
+      -webkit-transition: -webkit-box-shadow .4s ease;
+      transition: -webkit-box-shadow .4s ease;
+      -o-transition: box-shadow .4s ease;
+      transition: box-shadow .4s ease;
+      transition: box-shadow .4s ease, -webkit-box-shadow .4s ease; } }
+
+.sprinkhaan-container[data-state="expanded"] .sprinkhaan-inner {
+  pointer-events: auto; }
+
+.sprinkhaan-container[data-state="expanded"] .sprinkhaan-close-button {
+  opacity: 1;
+  z-index: 11;
+  pointer-events: auto; }
+
+.sprinkhaan-container[data-state="collapsed"] .sprinkhaan-header.is-not-sticky {
+  cursor: pointer; }
+
+.sprinkhaan-container[data-sticky-header="true"] .sprinkhaan-header.is-sticky {
+  opacity: 1;
+  z-index: 10;
+  -webkit-box-shadow: 0 0 10px black;
+  box-shadow: 0 0 10px black; }
+
+.sprinkhaan-container[data-sticky-header="true"] .sprinkhaan-header.is-not-sticky {
+  opacity: 0;
+  z-index: -1; }
+
+.sprinkhaan-container[data-state="expanded"][data-animating="false"] .sprinkhaan-inner {
+  overflow-y: scroll; }
 
 #map {
   -webkit-box-flex: 1;
