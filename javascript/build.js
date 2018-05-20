@@ -76521,13 +76521,18 @@ var BuurtInbraak = function () {
 
       this.min = 100000;
       this.max = 0;
-      response.features.forEach(function (row) {
-        var marker = new L$1.Marker([row.geometry.coordinates[1], row.geometry.coordinates[0]]);
-        marker.data = row;
-        _this4.markerCluster.addLayer(marker);
-      });
 
-      this.resizeMarkers();
+      if (response.features) {
+        response.features.forEach(function (row) {
+          var marker = new L$1.Marker([row.geometry.coordinates[1], row.geometry.coordinates[0]]);
+          marker.data = row;
+          _this4.markerCluster.addLayer(marker);
+        });
+
+        this.resizeMarkers();
+      } else {
+        this.fetchMarkers();
+      }
     }
 
     /**

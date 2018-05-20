@@ -264,13 +264,19 @@ class BuurtInbraak {
   createMarkers (response) {
     this.min = 100000;
     this.max = 0;
-    response.features.forEach((row) => {
-      let marker = new L.Marker([row.geometry.coordinates[1], row.geometry.coordinates[0]]);
-      marker.data = row;
-      this.markerCluster.addLayer(marker);
-    });
 
-    this.resizeMarkers();
+    if (response.features) {
+      response.features.forEach((row) => {
+        let marker = new L.Marker([row.geometry.coordinates[1], row.geometry.coordinates[0]]);
+        marker.data = row;
+        this.markerCluster.addLayer(marker);
+      });
+  
+      this.resizeMarkers();
+    }
+    else {
+      this.fetchMarkers();
+    }
   }
 
   /**
