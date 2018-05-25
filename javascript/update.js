@@ -40,7 +40,7 @@ fetch(cartoUpdateUrl + encodeURI(lastUpdateQuery)).then(response => response.jso
         }
       });
 
-      values.chunk(40).forEach((valuesSubSet) => {
+      values.chunk(20).forEach((valuesSubSet) => {
         let query = encodeURI(`INSERT INTO misdaad (the_geom, category, categoryId, date, postal_code) VALUES `) +  valuesSubSet.join(",");
         let updateUrlWithQuery = cartoUpdateUrl + query + "&api_key=" + cartoDbKey;
         fetch(updateUrlWithQuery);
